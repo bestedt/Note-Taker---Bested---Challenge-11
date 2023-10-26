@@ -3,7 +3,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const app = express();
-
+const uuid = require('./public/assets/js/uuid');
 // designate port to 3000 
 const PORT = process.env.PORT || 3000;
 
@@ -32,20 +32,22 @@ app.get('/api/notes', (req, res) => {
 // Save a new note to the database with the post, stuggled with this post route, the get one was so much easier, finally got it to work though
 app.post('/api/notes', (req, res) => {
   fs.readFile(dataFilePath, 'utf8', (err, data) => {
-    if (err) {
+    // If there is an error reading the file, sending the user this error
+        if (err) {
       res.status(500).json({ error: 'Unable to read notes data, please try again' });
     } else {
       const notes = JSON.parse(data);
       const newNote = req.body;
 
-      // Setting the ID of the new note to the current timestamp
-      newNote.id = Date.now().toString();
+      // Setting the ID of the new note using the uuid js file
+        newNote.id = uuid();
 
       notes.push(newNote);
         // Writing the updated notes array back to the file
       fs.writeFile(dataFilePath, JSON.stringify(notes, null, 2), (err) => {
         if (err) {
           res.status(500).json({ error: 'Unable to save note, please try again' });
+        // If there is no error, sending the user the new note
         } else {
           res.json(newNote);
         }
@@ -65,10 +67,10 @@ app.delete('/api/notes/:id', (req, res) => {
       const notes = JSON.parse(data);
 
       const noteIndex = notes.findIndex((note) => note.id === noteId);
-
+// if the note is found, splice it out of the array, splice method was fun to learn about 
       if (noteIndex !== -1) {
         notes.splice(noteIndex, 1);
-
+// writing the updated notes array back to the file
         fs.writeFile(dataFilePath, JSON.stringify(notes, null, 2), (err) => {
           if (err) {
             res.status(500).json({ error: 'Unable to save note, please try again' });
@@ -76,6 +78,7 @@ app.delete('/api/notes/:id', (req, res) => {
             res.json({ message: 'Note deleted, way to go!' });
           }
         });
+        // if the note is not found, showing the user this error
       } else {
         res.status(404).json({ error: 'Note not found, are you sure it exists?' });
       }
